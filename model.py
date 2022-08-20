@@ -5,8 +5,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d
-from model_encoder import StyleEncoder
+from BlendGAN.op import FusedLeakyReLU, fused_leaky_relu, upfirdn2d
+from BlendGAN.model_encoder import StyleEncoder
 
 
 class PixelNorm(nn.Module):

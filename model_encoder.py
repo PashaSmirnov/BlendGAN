@@ -8,7 +8,7 @@ from torch.nn import functional as F
 
 import torchvision.models.vgg as vgg
 
-from op import fused_leaky_relu
+from BlendGAN.op import fused_leaky_relu
 
 
 FeatureOutput = namedtuple(
