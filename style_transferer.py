@@ -26,7 +26,7 @@ class StyleTransferer:
         self._size = size
         self._add_weight_index = add_weight_index
         self._channel_multiplier = channel_multiplier
-        self._latent = 512
+        self._latent = latent
         self._n_mlp = n_mlp
 
         self._device = device
