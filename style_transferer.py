@@ -12,26 +12,38 @@ from BlendGAN.utils import ten2cv, cv2ten
 import glob
 import random
 
-seed = 0
+#seed = 0
 
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)
+#random.seed(seed)
+#np.random.seed(seed)
+#torch.manual_seed(seed)
+#torch.cuda.manual_seed_all(seed)
 
 class StyleTransferer:
     MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pretrained_models')
 
-    def __init__(self, device='cuda', size=1024, add_weight_index=6, channel_multiplier=2, latent=512, n_mlp=8):
+    def __init__(self, size=1024, add_weight_index=6, channel_multiplier=2, latent=512, n_mlp=8):
+        self._is_loaded = False
+
+        if not torch.cuda.is_available():
+            print("WARNING: No CUDA detected. The StyleTransferer is not loaded.")
+            return
+
         self._size = size
         self._add_weight_index = add_weight_index
         self._channel_multiplier = channel_multiplier
         self._latent = latent
         self._n_mlp = n_mlp
 
-        self._device = device
+        if not torch.cuda.is_available():
+            print("WARNING: No CUDA detected. The StyleTransferer is not loaded.")
+            return
+        self._device = 'cuda'
 
         ckpt_path = os.path.join(self.MODELS_DIR, 'blendgan.pt')
+        if not os.path.isfile(ckpt_path):
+            print("WARNING: No blendgan.pt found in BlendGAN/pretrained_models. Have you downloaded the models? The StyleTransferer is not loaded.")
+            return
         self._checkpoint = torch.load(ckpt_path)
         self._model_dict = self._checkpoint['g_ema']
 
@@ -46,10 +58,18 @@ class StyleTransferer:
         self._g_ema.eval()
 
         psp_encoder_path = os.path.join(self.MODELS_DIR, 'psp_encoder.pt')
+        if not os.path.isfile(psp_encoder_path):
+            print("WARNING: No blendgan.pt found in BlendGAN/pretrained_models. Have you downloaded the models? The StyleTransferer is not loaded.")
+            return
         self._psp_encoder = PSPEncoder(psp_encoder_path, output_size=self._size).to(self._device)
         self._psp_encoder.eval()
 
+        self._is_loaded = True
+
     def transfer_style(self, sketch_img, style_img):
+        if not self._is_loaded:
+            return sketch_img.copy()
+
         img_in = np.array(sketch_img)
         img_in_ten = cv2ten(img_in, self._device)
         img_in = cv2.resize(img_in, (self._size, self._size))
