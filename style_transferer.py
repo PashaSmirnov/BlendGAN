@@ -22,12 +22,8 @@ import random
 class StyleTransferer:
     MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pretrained_models')
 
-    def __init__(self, size=1024, add_weight_index=6, channel_multiplier=2, latent=512, n_mlp=8):
+    def __init__(self, device='cuda', size=1024, add_weight_index=6, channel_multiplier=2, latent=512, n_mlp=8):
         self._is_loaded = False
-
-        if not torch.cuda.is_available():
-            print("WARNING: No CUDA detected. The StyleTransferer is not loaded.")
-            return
 
         self._size = size
         self._add_weight_index = add_weight_index
@@ -35,10 +31,10 @@ class StyleTransferer:
         self._latent = latent
         self._n_mlp = n_mlp
 
-        if not torch.cuda.is_available():
-            print("WARNING: No CUDA detected. The StyleTransferer is not loaded.")
-            return
-        self._device = 'cuda'
+        self._device = device
+        if self._device == 'cuda' and not torch.cuda.is_available():
+            print("WARNING: No CUDA detected. The StyleTransferer will use CPU.")
+            self._device = 'cpu'
 
         ckpt_path = os.path.join(self.MODELS_DIR, 'blendgan.pt')
         if not os.path.isfile(ckpt_path):
@@ -61,7 +57,7 @@ class StyleTransferer:
         if not os.path.isfile(psp_encoder_path):
             print("WARNING: No blendgan.pt found in BlendGAN/pretrained_models. Have you downloaded the models? The StyleTransferer is not loaded.")
             return
-        self._psp_encoder = PSPEncoder(psp_encoder_path, output_size=self._size).to(self._device)
+        self._psp_encoder = PSPEncoder(psp_encoder_path, device=self._device, output_size=self._size)
         self._psp_encoder.eval()
 
         self._is_loaded = True

@@ -133,15 +133,15 @@ def get_keys(d, name):
 
 
 class PSPEncoder(Module):
-    def __init__(self, encoder_ckpt_path, output_size=1024):
+    def __init__(self, encoder_ckpt_path, device, output_size=1024):
         super(PSPEncoder, self).__init__()
         n_styles = int(math.log(output_size, 2)) * 2 - 2
-        self.encoder = GradualStyleEncoder(50, 'ir_se', n_styles)
+        self.encoder = GradualStyleEncoder(50, 'ir_se', n_styles).to(device)
 
         print('Loading psp encoders weights from irse50!')
         encoder_ckpt = torch.load(encoder_ckpt_path, map_location='cpu')
         self.encoder.load_state_dict(get_keys(encoder_ckpt, 'encoder'), strict=True)
-        self.latent_avg = encoder_ckpt['latent_avg'].cuda()
+        self.latent_avg = encoder_ckpt['latent_avg'].to(device)
 
         self.face_pool = torch.nn.AdaptiveAvgPool2d((256, 256))
 
