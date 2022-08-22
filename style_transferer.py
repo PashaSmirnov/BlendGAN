@@ -11,6 +11,9 @@ from BlendGAN.psp_encoder.psp_encoders import PSPEncoder
 from BlendGAN.utils import ten2cv, cv2ten
 import glob
 import random
+from ffhq_dataset.gen_aligned_image import FaceAlign
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+os.system(f"wget https://github.com/kim-ninh/align_face_ffhq/raw/main/shape_predictor_68_face_landmarks.dat -P {os.path.join(SCRIPT_DIR, 'ffhq_dataset')}")
 
 #seed = 0
 
@@ -60,17 +63,20 @@ class StyleTransferer:
         self._psp_encoder = PSPEncoder(psp_encoder_path, device=self._device, output_size=self._size)
         self._psp_encoder.eval()
 
+        self._fa = FaceAlign()
+
         self._is_loaded = True
 
     def transfer_style(self, sketch_img, style_img):
         if not self._is_loaded:
             return sketch_img.copy()
 
-        img_in = np.array(sketch_img)
+        img_in = np.array(sketch_img)[:, :, ::-1]
+        img_in = self._fa.get_crop_image(img_in)
         img_in_ten = cv2ten(img_in, self._device)
         img_in = cv2.resize(img_in, (self._size, self._size))
 
-        img_style = np.array(style_img)
+        img_style = np.array(style_img)[:, :, ::-1]
         img_style_ten = cv2ten(img_style, self._device)
         img_style = cv2.resize(img_style, (self._size, self._size))
 
@@ -80,4 +86,5 @@ class StyleTransferer:
             img_out_ten, _ = self._g_ema([sample_in], z_embed=sample_style, add_weight_index=self._add_weight_index,
                                          input_is_latent=True, return_latents=False, randomize_noise=False)
             img_out = ten2cv(img_out_ten)
-        return ToPILImage()(img_out)
+        img_out = ToPILImage()(img_out[:, :, ::-1])
+        return img_out
